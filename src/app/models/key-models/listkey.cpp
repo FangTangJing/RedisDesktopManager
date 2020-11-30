@@ -71,6 +71,38 @@ void ListKeyModel::removeRow(int i, ValueEditor::Model::Callback c) {
   });
 }
 
+QList<QByteArray> ListKeyModel::getRangeCmd(QVariant rowStartId, unsigned long count)
+{
+    if (isReverseOrder()) {
+        long rowStart = rowStartId.toLongLong();
+
+        if (rowStart == 0) {
+            rowStart = -1;
+        } else {
+            rowStart *= -1;
+        }
+
+        long rowStop = rowStart - count + 1;
+
+        QList<QByteArray> cmd {m_rowsLoadCmd, m_keyFullPath,
+                              QString::number(rowStop).toLatin1(),
+                              QString::number(rowStart).toLatin1()};
+        return cmd;
+    } else {
+        return KeyModel::getRangeCmd(rowStartId, count);
+    }
+}
+
+int ListKeyModel::addLoadedRowsToCache(const QVariantList &rows,
+                                       QVariant rowStartId) {
+  if (isReverseOrder()) {
+    return ListLikeKeyModel::addLoadedRowsToCache(
+        QList<QVariant>(rows.rbegin(), rows.rend()), rowStartId);
+  } else {
+    return ListLikeKeyModel::addLoadedRowsToCache(rows, rowStartId);
+  }
+}
+
 void ListKeyModel::verifyListItemPosistion(int row, Callback c) {
   auto verifyResponse = [this, row](RedisClient::Response r, Callback c) {
     QVariantList currentState = r.value().toList();
@@ -106,4 +138,9 @@ void ListKeyModel::deleteListRow(int count, const QByteArray &value,
                                  Callback c) {
   executeCmd({"LREM", m_keyFullPath, QString::number(count).toLatin1(), value},
              c);
+}
+
+bool ListKeyModel::isReverseOrder() const
+{
+    return m_filters.value("order", "default") == "reverse";
 }

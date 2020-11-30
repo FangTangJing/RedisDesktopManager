@@ -125,6 +125,20 @@ Repeater {
             valuesModel.setCurrentTab(keyIndex)
         }
 
+        function reloadValue() {
+            console.log("Reload value in tab")
+            keyTab.keyModel.reload()
+
+            if (isMultiRow) {
+                valueEditor.clear()
+                table.resetCurrentRow()
+
+                if (table.currentPage > table.totalPages) {
+                    table.goToPage(1)
+                }
+            }
+        }
+
         Rectangle {
             id: wrapper
             color: sysPalette.base
